@@ -22,12 +22,12 @@ Installation steps for Debian based systems:
 
 .. code:: bash
 
-   $ git clone https://github.com/AdrianSimionov/docsis.git
-   $ cd docsis
-   $ ./autogen.sh
-   $ ./configure
-   $ make
-   $ make install (optional)
+   git clone https://github.com/AdrianSimionov/docsis.git
+   cd docsis
+   ./autogen.sh
+   ./configure
+   make
+   make install (optional)
    
 
 Windows and Mac OS X
