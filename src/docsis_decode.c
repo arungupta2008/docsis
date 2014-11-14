@@ -35,7 +35,11 @@
 #include "docsis_globals.h"
 #include "docsis_snmp.h"
 #include "ethermac.h"
+#include "helper_functions.h"
 
+// Constants
+#define IPv4_With_Port 6
+#define IPv6_With_Port 18
 
 struct symbol_entry *
 find_symbol_by_code_and_pid (unsigned char code, unsigned int pid)
@@ -94,6 +98,76 @@ void decode_ip (unsigned char *tlvbuf, symbol_type *sym, size_t length )
   printf("%s %s;\n",
 	sym->sym_ident, inet_ntoa(helper) );
 }
+void decode_ip_with_port (unsigned char *tlvbuf, symbol_type *sym, size_t length )
+{
+	// Convert from BIGENDIAN to LITTLEENDIAN wiseversa
+		swapbytes(&tlvbuf, length);
+		if (length != IPv6_With_Port && length != IPv4_With_Port) {
+			fprintf(stderr, "Ipaddress with port size mismatch \n");
+			exit(-45);
+		}
+		// Take 2-2 bytes to convert
+		char *IP_with_port_Hex = tlvbuf;
+		char *IP_with_port_;
+		if (length == IPv4_With_Port) {
+			char IPv4_space[20] = { '\0' };
+			IP_with_port_ = &IPv4_space;
+			// This is Ipv4
+			char Ipv4_str[9] = { '\0' };
+			strncpy(Ipv4_str, IP_with_port_Hex, 8);
+			unsigned int Ipv4_Hex;
+			// converting string to Hex
+			sscanf(Ipv4_str, "%x", &Ipv4_Hex);
+			char dotted_Ipv4[40];
+			sprintf(dotted_Ipv4, "%d.%d.%d.%d", (Ipv4_Hex & 0xFF000000) >> 24,
+					(Ipv4_Hex & 0x00FF0000) >> 16, (Ipv4_Hex & 0x0000FF00) >> 8,
+					Ipv4_Hex & 0x000000FF);
+			mystrcat(IP_with_port_, dotted_Ipv4);
+			// Port have 4 HEX values
+			IP_with_port_Hex += 8;
+			char port[5] = { '\0' };
+			strncpy(port, IP_with_port_Hex, 4);
+			char Port_str[40];
+			unsigned int port_in_number;
+			sscanf(port, "%x", &port_in_number);
+			sprintf(Port_str, "%d", port_in_number);
+			mystrcat(IP_with_port_, ":");
+			mystrcat(IP_with_port_, Port_str);
+		}
+		else if (length == IPv6_With_Port) {
+			// This is Ipv6
+			char IPv4_space[50] = { '\0' };
+			IP_with_port_ = &IPv4_space;
+			int Ipv6_String_chunk = 0;
+			int count_for_dot = 0;
+			while (Ipv6_String_chunk < 32) {
+				char Ipv6_chunck[5] = { '\0' };
+				strncpy(Ipv6_chunck, IP_with_port_Hex, 4);
+				mystrcat(IP_with_port_, Ipv6_chunck);
+				if (count_for_dot < 7)
+					mystrcat(IP_with_port_, ":");
+				count_for_dot++;
+				IP_with_port_Hex += 4;
+				Ipv6_String_chunk += 4;
+			}
+			char port[5] = { '\0' };
+			strncpy(port, IP_with_port_Hex, 4);
+			char str[40];
+			//tostring(str, HexStringToUInt(port));
+			unsigned int Port_with_num;
+			sscanf(port, "%x", &Port_with_num);
+			sprintf(str, "%d", Port_with_num);
+			mystrcat(IP_with_port_, ":");
+			mystrcat(IP_with_port_, str);
+
+		}else{
+			fprintf(stderr, "ip address with port length mismatch\n");
+			        exit(-45);
+		}
+
+		fprintf (stdout, "%s %s;\n",
+			sym->sym_ident,IP_with_port_ );
+}
 
 void decode_ip6 (unsigned char *tlvbuf, symbol_type *sym, size_t length )
 {
@@ -103,7 +177,7 @@ void decode_ip6 (unsigned char *tlvbuf, symbol_type *sym, size_t length )
         fprintf(stderr, "ip address length mismatch\n");
         exit(-45);
   }
-
+  // Probably it won't work
   memcpy (&helper, tlvbuf, length );
   fprintf (stdout, "%s %s;\n",
 	sym->sym_ident, inet_ntop(AF_INET6,tlvbuf,ipstr,sizeof ipstr) );

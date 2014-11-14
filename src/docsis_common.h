@@ -77,7 +77,7 @@ union t_val {           /* union for returning token values */
         symbol_type *symptr;    /* For token identifiers */
         char *strval;           /* For strings */
         unsigned char *ustrval; /* For (unsigned char *) strings */
-        unsigned int ip;        /* For IP Addresses */
+        unsigned int ip;        /* For IP Addresses ipv6 or ipv4 ? */
         struct tlv_list *tlvlist; /* For for struct tlvlist pointers */
         struct tlv *tlvptr;     /* For struct tlv pointers; */
 };
